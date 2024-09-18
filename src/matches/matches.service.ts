@@ -19,6 +19,9 @@ export class MatchesService {
   private clientChallenges =
     this.clientProxySmartRanking.getClientProxyChallengesInstance();
 
+  private clientRankings =
+    this.clientProxySmartRanking.getClientProxyRankingsInstance();
+
   async createMatch(match: Match): Promise<Match> {
     try {
       const createdMatch = new this.matchModel(match);
@@ -37,11 +40,16 @@ export class MatchesService {
       await firstValueFrom(
         this.clientChallenges.emit('update-challenge-match', {
           idMatch: idMatch,
-          idChallenge: challenge,
+          Challenge: challenge,
         }),
       );
 
-      return result;
+      return await firstValueFrom(
+        this.clientRankings.emit('process-match', {
+          idMatch: idMatch,
+          match: match,
+        }),
+      );
     } catch (error) {
       this.logger.error(`Error: ${JSON.stringify(error.message)}`);
       throw new RpcException(error.message);
