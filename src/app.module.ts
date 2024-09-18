@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ChallengesModule } from './challenges/challenges.module';
 import { MatchesModule } from './matches/matches.module';
-import { ProxyrmqModule } from './proxyrmq/proxyrmq.module';
+import { ProxyRMQModule } from './proxyrmq/proxyrmq.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 
@@ -14,10 +12,8 @@ import { ConfigModule } from '@nestjs/config';
     ),
     ChallengesModule,
     MatchesModule,
-    ProxyrmqModule,
+    ProxyRMQModule,
     ConfigModule.forRoot({ isGlobal: true }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
