@@ -1,23 +1,21 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ChallengesModule } from './challenges/challenges.module';
 import { MatchesModule } from './matches/matches.module';
-import { ProxyrmqModule } from './proxyrmq/proxyrmq.module';
-import { MongooseModule } from '@nestjs/mongoose';
+import { ProxyRMQModule } from './proxyrmq/proxyrmq.module';
 import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
     MongooseModule.forRoot(
-      'mongodb+srv://thiagofdias2:eDMr2a5byleD2RFL@cluster.cjc37.mongodb.net/srdesafios?retryWrites=true&w=majority&appName=Cluster',
+      'mongodb+srv://thiagofdias2:eDMr2a5byleD2RFL@cluster.cjc37.mongodb.net/srchallenges?retryWrites=true&w=majority&appName=Cluster',
     ),
-    ChallengesModule,
+    ProxyRMQModule,
     MatchesModule,
-    ProxyrmqModule,
+    ChallengesModule,
     ConfigModule.forRoot({ isGlobal: true }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
