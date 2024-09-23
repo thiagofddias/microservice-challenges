@@ -32,12 +32,13 @@ export class MatchesService {
       const idMatch = result._id;
 
       const challenge: Challenge = await firstValueFrom(
-        this.clientChallenges.send<Challenge>('get-challenge', {
+        this.clientChallenges.send('get-challenge', {
+          idPlayer: '',
           idChallenge: match.challenge,
         }),
       );
 
-      await firstValueFrom(
+      return await firstValueFrom(
         this.clientChallenges.emit('update-challenge-match', {
           idMatch: idMatch,
           Challenge: challenge,

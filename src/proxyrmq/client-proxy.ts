@@ -14,9 +14,7 @@ export class ClientProxySmartRanking {
     return ClientProxyFactory.create({
       transport: Transport.RMQ,
       options: {
-        urls: [
-          `amqp://${this.configService.get<string>('RABBITMQ_USER')}:${this.configService.get<string>('RABBITMQ_PASSWORD')}@${this.configService.get<string>('RABBITMQ_URL')}`,
-        ],
+        urls: ['amqp://dev:devpass@localhost:5672/smartranking'],
         queue: 'admin-backend',
       },
     });
@@ -26,9 +24,7 @@ export class ClientProxySmartRanking {
     return ClientProxyFactory.create({
       transport: Transport.RMQ,
       options: {
-        urls: [
-          `amqp://${this.configService.get<string>('RABBITMQ_USER')}:${this.configService.get<string>('RABBITMQ_PASSWORD')}@${this.configService.get<string>('RABBITMQ_URL')}`,
-        ],
+        urls: ['amqp://dev:devpass@localhost:5672/smartranking'],
         queue: 'challenges',
       },
     });
@@ -38,9 +34,7 @@ export class ClientProxySmartRanking {
     return ClientProxyFactory.create({
       transport: Transport.RMQ,
       options: {
-        urls: [
-          `amqp://${this.configService.get<string>('RABBITMQ_USER')}:${this.configService.get<string>('RABBITMQ_PASSWORD')}@${this.configService.get<string>('RABBITMQ_URL')}`,
-        ],
+        urls: ['amqp://dev:devpass@localhost:5672/smartranking'],
         queue: 'rankings',
       },
     });

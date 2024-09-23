@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Logger,
-  Post,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common';
-import { ChallengesService } from './challenges.service';
+import { Controller, Logger } from '@nestjs/common';
 import {
   Ctx,
   EventPattern,
@@ -14,75 +7,79 @@ import {
   RmqContext,
 } from '@nestjs/microservices';
 import { Challenge } from './interface/challenges.interface';
+import { ChallengeService } from './challenges.service';
 
 const ackErrors: string[] = ['E11000'];
 
 @Controller('challenges')
-export class ChallengesController {
-  private logger = new Logger(ChallengesController.name);
+export class ChallengeController {
+  constructor(private readonly challengeService: ChallengeService) {}
 
-  constructor(private readonly challengesService: ChallengesService) {}
+  private readonly logger = new Logger(ChallengeController.name);
 
-  @Post()
-  @UsePipes(ValidationPipe)
+  @EventPattern('create-challenge')
   async createChallenge(
     @Payload() challenge: Challenge,
     @Ctx() context: RmqContext,
   ) {
+    console.log('To aqui?');
     const channel = context.getChannelRef();
-    const originalMessage = context.getMessage();
+    const originalMsg = context.getMessage();
     try {
-      await this.challengesService.createChallenge(challenge);
-      await channel.ack(originalMessage);
-      this.logger.log(`createChallenge: ${JSON.stringify(challenge)}`);
+      this.logger.log(`challenge: ${JSON.stringify(challenge)}`);
+      await this.challengeService.createChallenge(challenge);
+      await channel.ack(originalMsg);
     } catch (error) {
+      this.logger.log(`error: ${JSON.stringify(error.message)}`);
       const filterAckError = ackErrors.filter((ackError) =>
         error.message.includes(ackError),
       );
       if (filterAckError.length > 0) {
-        await channel.ack(originalMessage);
+        await channel.ack(originalMsg);
       }
     }
   }
 
-  @MessagePattern('get-challenges')
-  async getChallenges(
+  @MessagePattern('consult-challenges')
+  async consultChallenges(
     @Payload() data: any,
     @Ctx() context: RmqContext,
   ): Promise<Challenge[] | Challenge> {
     const channel = context.getChannelRef();
-    const originalMessage = context.getMessage();
+    const originalMsg = context.getMessage();
     try {
-      const { idPlayer, _id } = data;
+      const { playerId, _id } = data;
       this.logger.log(`data: ${JSON.stringify(data)}`);
-      if (idPlayer) {
-        return await this.challengesService.findChallengeFromPlayer(idPlayer);
+      if (playerId) {
+        return await this.challengeService.consultOnePlayersChallenges(
+          playerId,
+        );
       } else if (_id) {
-        return await this.challengesService.findChallengeFromId(_id);
+        return await this.challengeService.consultChallengeById(_id);
       } else {
-        return await this.challengesService.findAllChallenges();
+        return await this.challengeService.consultAllChallenges();
       }
     } finally {
-      await channel.ack(originalMessage);
+      await channel.ack(originalMsg);
     }
   }
 
   @EventPattern('update-challenge')
   async updateChallenge(@Payload() data: any, @Ctx() context: RmqContext) {
     const channel = context.getChannelRef();
-    const originalMessage = context.getMessage();
+    const originalMsg = context.getMessage();
     try {
       this.logger.log(`data: ${JSON.stringify(data)}`);
-      const _id = data._id;
+      const _id: string = data.id;
       const challenge: Challenge = data.challenge;
-      await this.challengesService.updateChallenge(_id, challenge);
-      await channel.ack(originalMessage);
+      await this.challengeService.updateChallenge(_id, challenge);
+      await channel.ack(originalMsg);
     } catch (error) {
       const filterAckError = ackErrors.filter((ackErrors) =>
         error.message.includes(ackErrors),
       );
       if (filterAckError.length > 0) {
-        await channel.ack(originalMessage);
+        await channel.ack(originalMsg);
       }
     }
   }
@@ -90,38 +87,40 @@ export class ChallengesController {
   @EventPattern('update-challenge-match')
   async updateChallengeMatch(@Payload() data: any, @Ctx() context: RmqContext) {
     const channel = context.getChannelRef();
-    const originalMessage = context.getMessage();
+    const originalMsg = context.getMessage();
     try {
-      this.logger.log(`data: ${JSON.stringify(data)}`);
-      const _id = data._id;
+      this.logger.log(`matchId: ${data}`);
+      const matchId: string = data.matchId;
       const challenge: Challenge = data.challenge;
-      await this.challengesService.updateChallengeMatch(_id, challenge);
-      await channel.ack(originalMessage);
+      await this.challengeService.updateChallengeMatch(matchId, challenge);
+      await channel.ack(originalMsg);
     } catch (error) {
       const filterAckError = ackErrors.filter((ackErrors) =>
         error.message.includes(ackErrors),
       );
       if (filterAckError.length > 0) {
-        await channel.ack(originalMessage);
+        await channel.ack(originalMsg);
       }
     }
   }
 
   @EventPattern('delete-challenge')
-  async deleteChallenge(@Payload() data: any, @Ctx() context: RmqContext) {
+  async deleteChallenge(
+    @Payload() challenge: Challenge,
+    @Ctx() context: RmqContext,
+  ) {
     const channel = context.getChannelRef();
-    const originalMessage = context.getMessage();
+    const originalMsg = context.getMessage();
     try {
-      this.logger.log(`data: ${JSON.stringify(data)}`);
-      const _id = data._id;
-      await this.challengesService.deleteChallenge(_id);
-      await channel.ack(originalMessage);
+      await this.challengeService.deleteChallenge(challenge);
+      await channel.ack(originalMsg);
     } catch (error) {
+      this.logger.log(`error: ${JSON.stringify(error.message)}`);
       const filterAckError = ackErrors.filter((ackErrors) =>
         error.message.includes(ackErrors),
       );
       if (filterAckError.length > 0) {
-        await channel.ack(originalMessage);
+        await channel.ack(originalMsg);
       }
     }
   }

@@ -1,78 +1,87 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Challenge } from './interface/challenges.interface';
-import { RpcException } from '@nestjs/microservices';
 import { Model } from 'mongoose';
+import { Challenge } from './interface/challenges.interface';
 import { ChallengeStatus } from './challenge-status.enum';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
-export class ChallengesService {
+export class ChallengeService {
   constructor(
-    @InjectModel('Challenge') private readonly challengeModel: Model<Challenge>,
+    @InjectModel('Challenges')
+    private readonly challengeModel: Model<Challenge>,
   ) {}
 
-  private readonly logger = new Logger(ChallengesService.name);
+  private readonly logger = new Logger(ChallengeService.name);
 
   async createChallenge(challenge: Challenge): Promise<Challenge> {
     try {
+      console.log('challenge: Será que eu chego aqui? ', challenge);
       const createdChallenge = new this.challengeModel(challenge);
+      createdChallenge.dateHourRequest = new Date();
+
+      createdChallenge.status = ChallengeStatus.PENDING;
+      this.logger.log(`createdChallenge: ${JSON.stringify(createdChallenge)}`);
       return await createdChallenge.save();
     } catch (error) {
-      this.logger.error(`Error: ${JSON.stringify(error.message)}`);
+      this.logger.error(`error: ${JSON.stringify(error.message)}`);
       throw new RpcException(error.message);
     }
   }
 
-  async findAllChallenges(): Promise<Challenge[]> {
+  async consultAllChallenges(): Promise<Challenge[]> {
     try {
       return await this.challengeModel.find().exec();
     } catch (error) {
-      this.logger.error(`Error: ${JSON.stringify(error.message)}`);
+      this.logger.error(`error: ${JSON.stringify(error.message)}`);
       throw new RpcException(error.message);
     }
   }
 
-  async findChallengeFromId(_id: string): Promise<Challenge> {
-    try {
-      return await this.challengeModel.findOne({ _id }).exec();
-    } catch (error) {
-      this.logger.error(`Error: ${JSON.stringify(error.message)}`);
-      throw new RpcException(error.message);
-    }
-  }
-
-  async findChallengeFromPlayer(_id: any): Promise<Challenge[] | Challenge> {
+  async consultOnePlayersChallenges(
+    _id: any,
+  ): Promise<Challenge[] | Challenge> {
     try {
       return await this.challengeModel.find().where('players').in(_id).exec();
     } catch (error) {
-      this.logger.error(`Error: ${JSON.stringify(error.message)}`);
+      this.logger.error(`error: ${JSON.stringify(error.message)}`);
+      throw new RpcException(error.message);
+    }
+  }
+
+  async consultChallengeById(_id: any): Promise<Challenge> {
+    try {
+      return await this.challengeModel.findOne({ _id }).exec();
+    } catch (error) {
+      this.logger.error(`error: ${JSON.stringify(error.message)}`);
       throw new RpcException(error.message);
     }
   }
 
   async updateChallenge(_id: string, challenge: Challenge): Promise<void> {
     try {
+      challenge.dateHourResponse = new Date();
       await this.challengeModel
         .findOneAndUpdate({ _id }, { $set: challenge })
         .exec();
     } catch (error) {
-      this.logger.error(`Error: ${JSON.stringify(error.message)}`);
+      this.logger.error(`error: ${JSON.stringify(error.message)}`);
       throw new RpcException(error.message);
     }
   }
 
   async updateChallengeMatch(
-    idMatch: string,
+    matchId: string,
     challenge: Challenge,
   ): Promise<void> {
     try {
       challenge.status = ChallengeStatus.REALIZED;
-      challenge.match = idMatch;
+      challenge.match = matchId;
       await this.challengeModel
         .findOneAndUpdate({ _id: challenge._id }, { $set: challenge })
         .exec();
     } catch (error) {
-      this.logger.error(`Error: ${JSON.stringify(error.message)}`);
+      this.logger.error(`error: ${JSON.stringify(error.message)}`);
       throw new RpcException(error.message);
     }
   }
@@ -80,13 +89,13 @@ export class ChallengesService {
   async deleteChallenge(challenge: Challenge): Promise<void> {
     try {
       const { _id } = challenge;
-
       challenge.status = ChallengeStatus.CANCELED;
-      this.logger.log(`Challenge canceled: ${JSON.stringify(challenge)}`);
-
-      await this.challengeModel.deleteOne({ _id }).exec();
+      this.logger.log(`challenge: ${JSON.stringify(challenge)}`);
+      await this.challengeModel
+        .findOneAndUpdate({ _id }, { $set: challenge })
+        .exec();
     } catch (error) {
-      this.logger.error(`Error: ${JSON.stringify(error.message)}`);
+      this.logger.error(`error: ${JSON.stringify(error.message)}`);
       throw new RpcException(error.message);
     }
   }
